@@ -1,16 +1,22 @@
-Running the repro app result in unhandled exception
+Start MSSQL server in Docker
 
 ```
-System.NotSupportedException: Services cannot be configured after ServiceProvider has been created.
-   at OpenTelemetry.Trace.TracerProviderBuilderBase.ConfigureServices(Action`1 configure)
-   at OpenTelemetry.Trace.TracerProviderBuilderExtensions.ConfigureServices(TracerProviderBuilder tracerProviderBuilder, Action`1 configure)
-   at OpenTelemetry.Trace.TracerProviderBuilderExtensions.AddHttpClientInstrumentation(TracerProviderBuilder builder, String name, Action`1 configureHttpClientInstrumentationOptions)
-   at OpenTelemetry.Trace.TracerProviderBuilderExtensions.AddHttpClientInstrumentation(TracerProviderBuilder builder, Action`1 configureHttpClientInstrumentationOptions)
-   at Program.<>c.<<Main>$>b__0_1(IServiceProvider serviceProvider, TracerProviderBuilder builder) in C:\code\github\otel-repro\ReproApp\Program.cs:line 8
+docker run -e "ACCEPT_EULA=Y" -e "MSSQL_SA_PASSWORD=yourStrong(!)Password" -p 1433:1433 -d mcr.microsoft.com/mssql/server:2022-latest
 ```
 
-Note that it is possible to register the http client instrumentation without the configuration lamda
+Run the application. It outputs:
 
-```csharp
-builder.AddHttpClientInstrumentation();
+```
+Parent activity started. Current activity: repro, Recorded: True
+After SQL command. Current activity: OpenTelemetry.Instrumentation.SqlClient.Execute, Recorded: False
+After HTTP call. Current activity: OpenTelemetry.Instrumentation.SqlClient.Execute, Recorded: False
+```
+
+Change order of call to SQL and HTTP call. It outputs:
+
+```
+Parent activity started. Current activity: repro, Recorded: True
+After HTTP call. Current activity: repro, Recorded: True
+After SQL command. Current activity: OpenTelemetry.Instrumentation.SqlClient.Execute, Recorded: False
+
 ```
